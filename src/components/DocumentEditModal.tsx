@@ -213,6 +213,8 @@ export const DocumentEditModal = ({ document, open, onOpenChange, onSave }: Docu
             )}
             <FileUpload
               documentId={formData.id}
+              customerId={formData.customerId}
+              documentNumber={formData.documentNumber || ""}
               documentName={formData.name}
               existingFileId={formData.fileId}
               onUploadComplete={handleFileUpload}

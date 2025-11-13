@@ -51,6 +51,10 @@ class ApiDataManager {
     return await documentService.uploadFile(customerId, documentId, file, documentNumber);
   }
 
+  async deleteDocumentFile(customerId: string, documentId: string): Promise<void> {
+    await documentService.deleteFile(customerId, documentId);
+  }
+
   // Checklist operations
   async getCustomerChecklist(customerId: string): Promise<ChecklistItem[]> {
     return await checklistService.getCustomerChecklist(customerId);

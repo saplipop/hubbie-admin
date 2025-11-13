@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 import loadingService from "@/services/loadingService";
 
 const api = axios.create({
@@ -6,14 +6,11 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     loadingService.show();
     const token = localStorage.getItem("token");
-    // Ensure headers object exists
-    // @ts-expect-error normalize headers for axios config
-    config.headers = (config.headers || {}) as any;
     if (token) {
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
