@@ -114,45 +114,37 @@ export function FileUpload({
   };
 
   const handleDownload = () => {
-    if (existingFile) {
-      downloadFile(existingFile);
-      toast({
-        title: "Download Started",
-        description: `Downloading ${existingFile.name}`,
-      });
-    }
+    // Backend-managed files - use fileUrl from backend
+    toast({
+      title: "Download",
+      description: "File download from backend - implement with fileUrl",
+    });
   };
 
-  const handleDelete = () => {
-    if (existingFile && onDelete) {
-      deleteFile(existingFile.id);
-      onDelete();
-      toast({
-        title: "File Deleted",
-        description: "The file has been removed",
-      });
+  const handleDelete = async () => {
+    if (onDelete) {
+      try {
+        await apiDataManager.deleteDocumentFile(customerId, documentId);
+        onDelete();
+        toast({
+          title: "File Deleted",
+          description: "The file has been removed",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Delete Failed",
+          description: error?.message || "Failed to delete file",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const getFileIcon = () => {
-    if (!existingFile) return <FileText className="h-4 w-4" />;
-    
-    const ext = existingFile.name.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'pdf':
-        return <FileText className="h-4 w-4 text-red-500" />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-        return <FileText className="h-4 w-4 text-blue-500" />;
-      case 'docx':
-        return <FileText className="h-4 w-4 text-blue-600" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
+    return <FileText className="h-4 w-4 text-primary" />;
   };
 
-  const isImage = existingFile?.type.startsWith('image/');
+  const hasExistingFile = !!existingFileId;
 
   return (
     <div className="space-y-2">
@@ -165,34 +157,14 @@ export function FileUpload({
         id={`file-${documentId}`}
       />
 
-      {existingFile ? (
+      {hasExistingFile ? (
         <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
           {getFileIcon()}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{existingFile.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {new Date(existingFile.uploadDate).toLocaleDateString()} • {(existingFile.size / 1024).toFixed(1)} KB
-            </p>
+            <p className="text-sm font-medium truncate">{documentName}</p>
+            <p className="text-xs text-muted-foreground">File uploaded</p>
           </div>
           <div className="flex gap-1">
-            {isImage && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setPreviewOpen(true)}
-                title="Preview"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              title="Download"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -239,22 +211,6 @@ export function FileUpload({
             </div>
           )}
         </div>
-      )}
-
-      {/* Image Preview Dialog */}
-      {isImage && existingFile && (
-        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{existingFile.name}</DialogTitle>
-            </DialogHeader>
-            <img
-              src={existingFile.base64Data}
-              alt={existingFile.name}
-              className="w-full h-auto max-h-[70vh] object-contain"
-            />
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );
