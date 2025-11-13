@@ -208,10 +208,14 @@ export function DocumentTabs({ documents, onDocumentUpdate, onBulkUpload }: Docu
                           <div className="flex justify-end">
                             <FileUpload
                               documentId={doc.id}
+                              customerId={doc.customerId}
+                              documentNumber={doc.documentNumber || ""}
                               documentName={doc.name}
                               existingFileId={doc.fileId}
                               onUploadComplete={(fileId) => handleFileUpload(doc, fileId)}
                               acceptedFormats=".pdf,.jpg,.jpeg,.png,.docx"
+                              disabled={!doc.documentNumber?.trim()}
+                              disabledMessage="Enter document number first"
                             />
                           </div>
                         </TableCell>
