@@ -9,8 +9,11 @@ api.interceptors.request.use(
   (config) => {
     loadingService.show();
     const token = localStorage.getItem("token");
+    // Ensure headers object exists
+    // @ts-expect-error normalize headers for axios config
+    config.headers = (config.headers || {}) as any;
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   },

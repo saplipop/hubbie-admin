@@ -44,22 +44,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      await authService.login({ email: username, password });
-      const roles = await authService.myRoles();
-      const role: "admin" | "employee" = roles.includes("admin") ? "admin" : "employee";
-      
+      const result = await authService.login({ email: username, password });
+      const userRole = result?.user?.role ?? result?.data?.user?.role ?? null;
+
+      let role: "admin" | "employee" = userRole === "admin" ? "admin" : "employee";
+
+      if (!userRole) {
+        try {
+          const roles = await authService.myRoles();
+          if (Array.isArray(roles)) {
+            role = roles.includes("admin") ? "admin" : "employee";
+          }
+        } catch {}
+      }
+
       const loggedInUser: User = { username, role };
       setUser(loggedInUser);
-      
+
       const expiryTime = new Date().getTime() + 30 * 60 * 1000;
       localStorage.setItem("solar_user", JSON.stringify(loggedInUser));
       localStorage.setItem("solar_session_expiry", expiryTime.toString());
-      
-      if (role === "admin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/my-projects");
-      }
+
+      navigate(role === "admin" ? "/dashboard" : "/my-projects");
       return true;
     } catch (error: any) {
       console.error("Login failed:", error);

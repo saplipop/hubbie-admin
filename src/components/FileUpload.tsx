@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { Upload, Download, FileText, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { saveFile, downloadFile, deleteFile, getFile, UploadedFile } from "@/utils/fileStorage";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -10,9 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { apiDataManager } from "@/lib/apiDataManager";
 
 interface FileUploadProps {
   documentId: string;
+  customerId: string;
+  documentNumber: string;
   documentName: string;
   existingFileId?: string;
   onUploadComplete: (fileId: string) => void;
@@ -24,6 +26,8 @@ interface FileUploadProps {
 
 export function FileUpload({
   documentId,
+  customerId,
+  documentNumber,
   documentName,
   existingFileId,
   onUploadComplete,
@@ -37,13 +41,22 @@ export function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const existingFile = existingFileId ? getFile(existingFileId) : null;
+  const existingFile = undefined; // Backend-managed; preview handled elsewhere
 
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (!documentNumber?.trim()) {
+      toast({
+        title: "Document Number Required",
+        description: "Enter a valid document number before uploading",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Validate file type
     const validTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
@@ -71,41 +84,32 @@ export function FileUpload({
     setUploadProgress(0);
 
     try {
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 100);
+      const { fileId } = await apiDataManager.uploadDocumentFile(
+        customerId,
+        documentId,
+        file,
+        documentNumber
+      );
 
-      const uploadedFile = await saveFile(file, documentId);
-      
-      clearInterval(progressInterval);
       setUploadProgress(100);
-      
-      setTimeout(() => {
-        onUploadComplete(uploadedFile.id);
-        toast({
-          title: "Upload Successful",
-          description: `${file.name} has been uploaded`,
-        });
-      }, 300);
-    } catch (error) {
+
+      onUploadComplete(fileId);
+      toast({
+        title: "Upload Successful",
+        description: `${file.name} has been uploaded`,
+      });
+    } catch (error: any) {
       toast({
         title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload file",
+        description: error?.response?.data?.message || error?.message || "Failed to upload file",
         variant: "destructive",
       });
     } finally {
       setTimeout(() => {
         setUploading(false);
         setUploadProgress(0);
-      }, 500);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      }, 300);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 

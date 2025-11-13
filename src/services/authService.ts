@@ -3,14 +3,29 @@ import { LoginRequest, SignupRequest } from "@/interfaces/authentication";
 
 
 const login = async (credentials: LoginRequest): Promise<any> => {
-  const response = await api.post<any>(`/login`, credentials);
+  // Send both email and username to be compatible with different backends
+  const payload: any = {
+    email: credentials.email,
+    username: credentials.email,
+    password: credentials.password,
+  };
 
-  if (response.data) {
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("userId", response.data.user.id);
-    localStorage.setItem("isAdmin", response.data?.roles?.includes('admin'));
+  const response = await api.post<any>(`/login`, payload);
+  const body = response.data;
+
+  const token = body?.token ?? body?.data?.token;
+  const user = body?.user ?? body?.data?.user;
+  const roles = body?.roles ?? body?.data?.roles;
+
+  if (token) localStorage.setItem("token", token);
+  if (user?.id) localStorage.setItem("userId", user.id);
+  if (Array.isArray(roles)) {
+    localStorage.setItem("isAdmin", String(roles.includes("admin")));
+  } else if (user?.role) {
+    localStorage.setItem("isAdmin", String(user.role === "admin"));
   }
-  return response.data;
+
+  return body;
 };
 
 const myRoles = async (): Promise<any> => {
